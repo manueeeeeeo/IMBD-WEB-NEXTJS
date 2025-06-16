@@ -2,8 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { auth, db } from '../../firebase/config';
-import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import {
+  doc,
+  setDoc,
+  getDocs,
+  collection,
+  query,
+  where,
+} from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function CompletarPerfil() {
   const [fullName, setFullName] = useState('');
@@ -12,6 +20,7 @@ export default function CompletarPerfil() {
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState('');
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -23,8 +32,8 @@ export default function CompletarPerfil() {
     const reader = new FileReader();
 
     reader.onloadend = () => {
-      // Comprimir imagen (limitamos tamaño)
       setPhoto(reader.result);
+      setPreview(reader.result);
     };
 
     if (file) {
@@ -52,7 +61,6 @@ export default function CompletarPerfil() {
       return setError('Debes ser mayor de edad para crear una cuenta.');
     }
 
-    // Verificamos si el username ya existe
     const q = query(collection(db, 'users'), where('username', '==', username));
     const existing = await getDocs(q);
     if (!existing.empty) {
@@ -69,59 +77,78 @@ export default function CompletarPerfil() {
       description,
       isAdult: true,
       photo,
-      favorites: []
+      favorites: [],
     });
 
     router.push('/');
   };
 
   return (
-    <main className="p-6 max-w-xl mx-auto text-white">
-      <h2 className="text-2xl font-bold mb-4">Completa tu perfil</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Nombre completo"
-          className="p-2 rounded bg-gray-800"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-        />
-        <input
-          type="date"
-          className="p-2 rounded bg-gray-800"
-          value={birthdate}
-          onChange={(e) => setBirthdate(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Nombre de usuario"
-          className="p-2 rounded bg-gray-800"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <textarea
-          placeholder="Descripción"
-          className="p-2 rounded bg-gray-800"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImage}
-          className="text-sm"
-        />
-        {error && <p className="text-red-400">{error}</p>}
-        <button
-          type="submit"
-          className="bg-green-600 p-2 rounded hover:bg-green-700"
-        >
-          Guardar perfil
-        </button>
-      </form>
-    </main>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-black to-gray-900 text-white">
+      <motion.div
+        className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-lg relative"
+        initial={{ opacity: 0, y: 60 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <h2 className="text-3xl font-bold mb-6 text-center">Completa tu perfil</h2>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && <p className="text-red-400 text-sm">{error}</p>}
+
+          <input
+            type="text"
+            placeholder="Nombre completo"
+            className="p-3 bg-gray-700 rounded"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            required
+          />
+          <input
+            type="date"
+            className="p-3 bg-gray-700 rounded"
+            value={birthdate}
+            onChange={(e) => setBirthdate(e.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Nombre de usuario"
+            className="p-3 bg-gray-700 rounded"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <textarea
+            placeholder="Descripción"
+            className="p-3 bg-gray-700 rounded resize-none h-24"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+
+          <label className="text-sm text-gray-300 mt-2">Foto de perfil:</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImage}
+            className="text-sm bg-gray-700 rounded p-2"
+          />
+          {preview && (
+            <img
+              src={preview}
+              alt="Vista previa"
+              className="w-24 h-24 rounded-full object-cover mx-auto border-2 border-white mt-2"
+            />
+          )}
+
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 py-2 rounded font-semibold mt-4"
+          >
+            Guardar perfil
+          </button>
+        </form>
+      </motion.div>
+    </div>
   );
 }
